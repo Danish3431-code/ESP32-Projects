@@ -1,0 +1,112 @@
+# PID-Based Temperature Control System (ESP32 + DHT22 + Blynk)
+
+A closed-loop PID (Proportional-Integral-Derivative) temperature control system built with an ESP32 microcontroller. The system reads real-time temperature from a DHT22 sensor and dynamically adjusts a PWM-controlled heating element to maintain a user-defined setpoint. Live monitoring and remote setpoint adjustment are done through a Blynk IoT dashboard. The project is developed and simulated entirely in the Wokwi simulator, running inside VS Code with PlatformIO, so no physical hardware is required.
+
+## How It Works
+
+DHT22 sensor → ESP32 (PID algorithm) → PWM-controlled heater (LED) → DHT22 feedback loop
+↕
+Blynk Cloud → Mobile app / Web dashboard (live monitoring + setpoint control)
+
+1. The DHT22 sensor measures the current temperature.
+2. The ESP32 calculates the error between the setpoint and the current temperature.
+3. A PID algorithm computes a correction value from the error, using Proportional, Integral, and Derivative terms.
+4. The correction value is sent as a PWM signal to the heating element (simulated with an LED).
+5. The current temperature, setpoint, and heater output are all displayed live on the Blynk dashboard, with history tracked on a chart.
+6. The setpoint can be changed remotely from the Blynk app, and the system reacts accordingly.
+
+## What Is PID Control
+
+A PID controller continuously calculates an error value (the difference between a desired setpoint and a measured value) and applies a correction based on three terms:
+
+| Term | Role |
+|---|---|
+| **P (Proportional)** | Reacts to the current error — larger error produces a larger correction |
+| **I (Integral)** | Accounts for the accumulated past error — eliminates steady-state offset |
+| **D (Derivative)** | Reacts to the rate of change of the error — reduces overshoot |
+
+```
+Output = Kp × error + Ki × (sum of error) + Kd × (rate of change of error)
+```
+
+## Components Used
+
+| Component | Purpose |
+|---|---|
+| ESP32 | Main controller with built-in WiFi, runs the PID algorithm |
+| DHT22 | Measures the current temperature (feedback sensor) |
+| LED + Resistor | Simulates the heating element, driven by a PWM signal |
+| Blynk IoT | Mobile app and cloud dashboard for live monitoring and setpoint control |
+| Wokwi | Online simulator (replaces real hardware) |
+| PlatformIO (VS Code) | Development environment used to build and run the simulation |
+
+## Circuit Connections
+
+| From | To | Purpose |
+|---|---|---|
+| DHT22 VCC | ESP32 3V3 | Power |
+| DHT22 SDA | ESP32 GPIO 15 | Temperature data |
+| DHT22 GND | ESP32 GND | Ground |
+| ESP32 GPIO 25 | Resistor | PWM signal (heater control) |
+| Resistor | LED anode | Current limiting |
+| LED cathode | ESP32 GND | Ground |
+
+**Circuit image:** image ki place ha
+
+## Blynk Setup
+
+1. Create a template named `PID Temperature Controller` (Hardware: ESP32, Connection: WiFi).
+2. Add three datastreams:
+   - `Current Temp` — Virtual Pin V0, type Double
+   - `Setpoint` — Virtual Pin V1, type Double (adjustable from the app)
+   - `Heater Output` — Virtual Pin V2, type Double (0–100%)
+3. Add widgets to the dashboard:
+   - Gauge linked to `Current Temp (V0)`
+   - Slider linked to `Setpoint (V1)`
+   - Gauge linked to `Heater Output (V2)`
+   - Chart linked to all three, to visualize system behavior over time
+4. Create a device from the template and copy the Template ID, Template Name, and Auth Token.
+
+## How to Run
+
+1. Open the project folder in VS Code with the PlatformIO and Wokwi Simulator extensions installed.
+2. Open `platformio.ini` and confirm the required libraries are listed (Blynk, DHT sensor library).
+3. Open `src/main.cpp` and replace the three placeholder Blynk values with your own.
+4. Build the project (PlatformIO: Build).
+5. Run the simulation (Command Palette → `Wokwi: Start Simulator`).
+6. Watch the Serial Monitor for live setpoint, current temperature, and PID output values.
+
+## How to Demonstrate the Control Loop
+
+Wokwi's simulated DHT22 does not automatically respond to the heater's output, so the feedback loop is demonstrated manually:
+
+1. Set a target temperature using the Setpoint slider in Blynk.
+2. Click the DHT22 sensor in Wokwi and manually move its temperature slider away from the setpoint.
+3. Observe the Heater Output gauge rise as the error increases.
+4. Gradually move the DHT22 temperature slider toward the setpoint.
+5. Observe the Heater Output gauge fall as the error decreases, approaching 0% once the current temperature matches the setpoint.
+
+**Working screenshot:** image ki place ha
+
+## Code Overview
+
+| Part | What It Does |
+|---|---|
+| `computePID(currentTemp)` | Calculates the PID output from the current error, integral, and derivative |
+| `BLYNK_WRITE(V1)` | Updates the setpoint whenever it is changed from the Blynk app |
+| `analogWrite(HEATER_PIN, output)` | Sends the PID output as a PWM signal to the heater (LED) |
+| Integral windup limit | Caps the integral term so it does not grow unbounded during large or prolonged errors |
+| `timer.setInterval(2000L, controlLoop)` | Runs the sensor read + PID calculation + output cycle every 2 seconds |
+
+## Important Note
+
+Never upload your real Blynk Auth Token to a public repository. This project uses placeholders. Add your own token only on your computer or in Wokwi.
+
+## Tools and Technologies
+
+ESP32, Arduino C/C++, PID Control Algorithm, Blynk IoT, Wokwi Simulator, PlatformIO, VS Code
+
+## Author
+
+Danish
+GitHub: [Danish3431-code](https://github.com/Danish3431-code)
